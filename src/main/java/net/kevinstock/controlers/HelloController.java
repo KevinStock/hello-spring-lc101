@@ -7,6 +7,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.ResponseBody;
 
+import javax.servlet.http.Cookie;
+import javax.servlet.http.HttpServletResponse;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -20,7 +22,7 @@ import static net.kevinstock.models.HelloMessage.getLanguages;
 @Controller
 public class HelloController {
 
-    static int count = 0;
+    private Integer count = 0;
 
     @RequestMapping(value = "")
     @ResponseBody
@@ -55,12 +57,27 @@ public class HelloController {
 
     @RequestMapping(value = "hello", method=RequestMethod.POST)
     @ResponseBody
-    public String helloPost(HttpServletRequest request) {
+    public String helloPost(HttpServletRequest request, HttpServletResponse response) {
 
         String name = request.getParameter("name");
         String language = request.getParameter("lang");
 
-        count++;
+        Cookie[] cookies = request.getCookies();
+        if (cookies != null) {
+            for (Cookie c : cookies) {
+                if (c.getName().equals("page-views")) {
+                    count = Integer.parseInt(c.getValue()) + 1;
+                    c.setValue(count.toString());
+                    response.addCookie(c);
+                }
+            }
+        }
+        else {
+            count = 1;
+            Cookie cookie = new Cookie("page-views", count.toString());
+            response.addCookie(cookie);
+        }
+
         return createMessage(language, name) + " " + count;
     }
 
